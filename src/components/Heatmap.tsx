@@ -1,7 +1,7 @@
 import * as React from 'react'
 
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '~/components/ui/tooltip'
-import { cn } from '~/lib/utils'
+import { cn, toLocalDateStr } from '~/lib/utils'
 
 import type { CheckIn } from '~/types/habit'
 
@@ -53,7 +53,7 @@ export function Heatmap({ checkIns, habitId, className }: HeatmapProps) {
 
     const checkInsByDate = new Map<string, number>()
     filteredCheckIns.forEach((c) => {
-      const dateKey = c.date.split('T')[0]
+      const dateKey = toLocalDateStr(new Date(c.date))
       checkInsByDate.set(dateKey, (checkInsByDate.get(dateKey) || 0) + 1)
     })
 
@@ -61,7 +61,7 @@ export function Heatmap({ checkIns, habitId, className }: HeatmapProps) {
       const currentDate = new Date(startDate)
       currentDate.setDate(startDate.getDate() + i)
 
-      const dateStr = currentDate.toISOString().split('T')[0]
+      const dateStr = toLocalDateStr(currentDate)
       const count = checkInsByDate.get(dateStr) || 0
 
       let level: 0 | 1 | 2 | 3 | 4 = 0

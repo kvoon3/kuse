@@ -2,6 +2,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import { useLocalStorage } from 'react-use'
 
 import { Heatmap } from '~/components/Heatmap'
+import { toLocalDateStr } from '~/lib/utils'
 
 import type { Habit, CheckIn } from '~/types/habit'
 
@@ -28,8 +29,8 @@ function Home() {
   }
 
   const toggleCheckIn = (habitId: string): void => {
-    const today = new Date().toISOString().split('T')[0]
-    const existing = checkIns?.find((c) => c.habitId === habitId && c.date.startsWith(today))
+    const today = toLocalDateStr(new Date())
+    const existing = checkIns?.find((c) => c.habitId === habitId && toLocalDateStr(new Date(c.date)) === today)
 
     if (existing) {
       setCheckIns(checkIns?.filter((c) => c !== existing) || [])
@@ -39,8 +40,8 @@ function Home() {
   }
 
   const isCheckedToday = (habitId: string): boolean => {
-    const today = new Date().toISOString().split('T')[0]
-    return checkIns?.some((c) => c.habitId === habitId && c.date.startsWith(today)) || false
+    const today = toLocalDateStr(new Date())
+    return checkIns?.some((c) => c.habitId === habitId && toLocalDateStr(new Date(c.date)) === today) || false
   }
 
   return (
