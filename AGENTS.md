@@ -9,6 +9,7 @@
 - **Framework**: TanStack Start + TanStack Router
 - **Frontend**: React 19, TypeScript 5.9
 - **Styling**: Tailwind CSS v4, Shadcn/ui
+- **State**: react-use (`useLocalStorage` for persistence)
 - **Build Tool**: Vite 7
 - **Testing**: Vitest + @testing-library/react
 
@@ -47,11 +48,12 @@ pnpm up
 // Good
 import { useState } from 'react'
 import { Link } from '@tanstack/react-router'
+import { useLocalStorage } from 'react-use'
 import { cn } from '~/lib/utils'
-import { Header } from '~/components/Header'
+import { Heatmap } from '~/components/Heatmap'
 
 // Bad - mixing order or using wrong alias
-import { Header } from '@/components/Header'
+import { Heatmap } from '@/components/Heatmap'
 import { useState } from 'react'
 ```
 
@@ -134,9 +136,10 @@ export function HabitCard({
 ```
 src/
   components/        # React components
+    ui/              # Shadcn/ui components
   routes/           # TanStack file-based routes
   lib/              # Utilities, helpers
-  data/             # Data types, mock data (remove demo files!)
+  types/            # TypeScript type definitions
   styles.css        # Global styles + Tailwind
 ```
 
@@ -144,12 +147,20 @@ src/
 
 ### Path Alias Migration
 
-⚠️ **CRITICAL**: This codebase is migrating from `@/` to `~/` alias:
+✅ **COMPLETED**: Migrated from `@/` to `~/` alias. All imports now use `~/`.
 
-- Update `tsconfig.json`: `"~/*": ["./src/*"]`
-- Update `vite.config.ts`: `'~': fileURLToPath(new URL('./src', import.meta.url))`
-- Update `components.json` aliases accordingly
-- Replace all `@/` imports with `~/`
+### State Management
+
+Use `useLocalStorage` from `react-use` for client-side persistence:
+
+```typescript
+const [habits, setHabits] = useLocalStorage<Habit[]>('habits', [])
+```
+
+- Auto-persists to localStorage on every state change
+- Auto-loads from localStorage on mount
+- No manual useEffect sync needed
+- Fully type-safe
 
 ### Demo Files to Remove
 
@@ -157,7 +168,6 @@ The following demo/template files should be cleared/deleted:
 
 - `src/routes/demo/*` - All demo route files
 - `src/data/demo.punk-songs.ts` - Demo data
-- Demo links in `src/components/Header.tsx`
 - Replace `src/routes/index.tsx` landing page with habit tracker UI
 
 ### Route Conventions (TanStack Router)
@@ -186,18 +196,17 @@ The following demo/template files should be cleared/deleted:
 
 1. Install dependencies: `pnpm install`
 2. Start dev server: `pnpm dev`
-3. Clear demo files before implementing features
-4. Use `~/` alias for all internal imports
-5. Follow strict TypeScript - no shortcuts
-6. Test with `pnpm test` before committing changes
+3. Use `~/` alias for all internal imports
+4. Follow strict TypeScript - no shortcuts
+5. Test with `pnpm test` before committing changes
 
 ## Project Context
 
 kuse is a habit tracker with:
 
 - GitHub-style contribution heatmap visualization
-- Daily habit tracking and streaks
-- Color-coded habit categories
-- Progress statistics and insights
+- Daily habit tracking (checkbox toggle)
+- Minimalist UI design (flat borders, white background)
+- `useLocalStorage` from react-use for automatic persistence
 
 Build a clean, focused UI that puts the habit heatmap front and center.
