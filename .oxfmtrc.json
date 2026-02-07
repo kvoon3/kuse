@@ -1,0 +1,22 @@
+{
+  "$schema": "./node_modules/oxfmt/configuration_schema.json",
+  "printWidth": 160,
+  "tabWidth": 2,
+  "useTabs": false,
+  "semi": false,
+  "singleQuote": true,
+  "jsxSingleQuote": true,
+  "trailingComma": "es5",
+  "bracketSpacing": true,
+  "arrowParens": "always",
+  "endOfLine": "lf",
+  "ignorePatterns": ["dist/**", "node_modules/**", "*.min.js", "*.min.ts", "src/routeTree.gen.ts"],
+  "experimentalSortImports": {
+    "newlinesBetween": true,
+    "groups": [
+      ["builtin", "external"],
+      ["internal", "parent", "sibling", "index"],
+      ["type", "type-import"]
+    ]
+  }
+}

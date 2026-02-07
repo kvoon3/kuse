@@ -1,0 +1,22 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["typescript", "react", "import", "unicorn", "oxc", "jsx-a11y", "jsdoc", "node", "promise", "jest", "vitest"],
+  "env": {
+    "browser": true,
+    "es2024": true,
+    "node": true
+  },
+  "globals": {
+    "React": "readonly"
+  },
+  "settings": {
+    "react": {
+      "version": "19"
+    }
+  },
+  "rules": {
+    "no-console": "warn",
+    "no-debugger": "error"
+  },
+  "ignorePatterns": ["dist/**", "node_modules/**", "*.min.js", "*.min.ts", "src/routeTree.gen.ts"]
+}
