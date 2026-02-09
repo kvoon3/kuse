@@ -13,36 +13,11 @@
 - **Build Tool**: Vite 7
 - **Testing**: Vitest + @testing-library/react
 
-## Build Commands
-
-```bash
-# Development server
-pnpm dev
-
-# Production build
-pnpm build
-
-# Preview production build
-pnpm preview
-
-# Run all tests
-pnpm test
-
-# Run single test file
-pnpm test <filename>.test.tsx
-# OR: npx vitest run <filename>.test.tsx
-
-# Update dependencies
-pnpm up
-```
-
 ## Code Style Guidelines
 
 ### Imports
 
-- Use `~/` alias for all internal imports (CHANGED from `@/`)
-- External library imports first, then internal imports
-- Group imports: React/framework → libraries → internal (~/\*) → relative
+- Accessibility is a first-class consideration – always consider ARIA attributes and keyboard navigation
 
 ```typescript
 // Good

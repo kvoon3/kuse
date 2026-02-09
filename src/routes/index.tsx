@@ -1,7 +1,10 @@
 import { createFileRoute } from '@tanstack/react-router'
+import * as React from 'react'
 import { useLocalStorage } from 'react-use'
 
+import { HabitItem } from '~/components/HabitItem'
 import { Heatmap } from '~/components/Heatmap'
+import { KeyboardShortcuts, KeyboardShortcutsButton } from '~/components/KeyboardShortcuts'
 import { toLocalDateStr } from '~/lib/utils'
 
 import type { Habit, CheckIn } from '~/types/habit'
@@ -11,6 +14,49 @@ export const Route = createFileRoute('/')({ component: Home })
 function Home() {
   const [habits, setHabits] = useLocalStorage<Habit[]>('habits', [])
   const [checkIns, setCheckIns] = useLocalStorage<CheckIn[]>('checkIns', [])
+  const [liveRegionText, setLiveRegionText] = React.useState('')
+  const [focusedHabitId, setFocusedHabitId] = React.useState<string | null>(null)
+  const [newlyAddedId, setNewlyAddedId] = React.useState<string | null>(null)
+  const [showKeyboardShortcuts, setShowKeyboardShortcuts] = React.useState(false)
+  const inputRef = React.useRef<HTMLInputElement>(null)
+  const habitRefs = React.useRef<Map<string, HTMLLIElement>>(new Map())
+
+  React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
+        e.preventDefault()
+        inputRef.current?.focus()
+        return
+      }
+
+      if (
+        e.key === '?' &&
+        !e.ctrlKey &&
+        !e.metaKey &&
+        !e.altKey &&
+        e.target instanceof HTMLElement &&
+        e.target.tagName !== 'INPUT' &&
+        e.target.tagName !== 'TEXTAREA'
+      ) {
+        e.preventDefault()
+        setShowKeyboardShortcuts((prev) => !prev)
+      }
+    }
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [])
+
+  // Clear newlyAddedId after focus effect runs
+  React.useEffect(() => {
+    if (newlyAddedId && focusedHabitId === newlyAddedId) {
+      setNewlyAddedId(null)
+    }
+  }, [newlyAddedId, focusedHabitId])
+
+  const announce = React.useCallback((message: string) => {
+    setLiveRegionText(message)
+    setTimeout(() => setLiveRegionText(''), 1000)
+  }, [])
 
   const addHabit = (name: string): void => {
     if (!name.trim()) return
@@ -21,21 +67,39 @@ function Home() {
       createdAt: new Date().toISOString(),
     }
     setHabits([...(habits || []), newHabit])
+    setNewlyAddedId(newHabit.id)
+    setFocusedHabitId(newHabit.id)
+    announce(`Added habit: ${newHabit.name}`)
   }
 
-  const deleteHabit = (id: string): void => {
+  const deleteHabit = (id: string, name: string): void => {
+    const currentIndex = habits?.findIndex((h) => h.id === id) ?? -1
     setHabits(habits?.filter((h) => h.id !== id) || [])
     setCheckIns(checkIns?.filter((c) => c.habitId !== id) || [])
+    announce(`Deleted habit: ${name}`)
+
+    // Focus next item or previous if deleting last
+    if (habits && habits.length > 1) {
+      const nextIndex = Math.min(currentIndex, habits.length - 2)
+      const nextHabit = habits[nextIndex === currentIndex ? nextIndex + 1 : nextIndex]
+      if (nextHabit && nextHabit.id !== id) {
+        setFocusedHabitId(nextHabit.id)
+      } else if (habits.length > 1) {
+        setFocusedHabitId(habits[0].id)
+      }
+    }
   }
 
-  const toggleCheckIn = (habitId: string): void => {
+  const toggleCheckIn = (habitId: string, habitName: string): void => {
     const today = toLocalDateStr(new Date())
     const existing = checkIns?.find((c) => c.habitId === habitId && toLocalDateStr(new Date(c.date)) === today)
 
     if (existing) {
       setCheckIns(checkIns?.filter((c) => c !== existing) || [])
+      announce(`Unchecked: ${habitName}`)
     } else {
       setCheckIns([...(checkIns || []), { habitId, date: new Date().toISOString(), message: '' }])
+      announce(`Checked: ${habitName}`)
     }
   }
 
@@ -44,57 +108,109 @@ function Home() {
     return checkIns?.some((c) => c.habitId === habitId && toLocalDateStr(new Date(c.date)) === today) || false
   }
 
+  const handleNavigate = (habitId: string, direction: 'up' | 'down') => {
+    if (!habits) return
+    const currentIndex = habits.findIndex((h) => h.id === habitId)
+    if (currentIndex === -1) return
+
+    let newIndex: number
+    if (direction === 'up') {
+      newIndex = currentIndex > 0 ? currentIndex - 1 : habits.length - 1
+    } else {
+      newIndex = currentIndex < habits.length - 1 ? currentIndex + 1 : 0
+    }
+
+    setFocusedHabitId(habits[newIndex].id)
+  }
+
   return (
     <div className='min-h-screen bg-white p-4'>
-      <div className='max-w-3xl mx-auto'>
-        {/* Header */}
-        <h1 className='text-2xl font-bold mb-8'>Habits</h1>
+      <a href='#main-content' className='skip-link'>
+        Skip to main content
+      </a>
 
-        {/* Heatmap */}
+      <div className='max-w-3xl mx-auto'>
+        <h1 className='text-2xl font-bold mb-8'>Kuse</h1>
+
         {habits && habits.length > 0 && (
-          <div className='mb-8 p-4 border border-slate-200 rounded'>
+          <div className='mb-8 p-4 mx-auto border border-slate-200 rounded w-fit' role='region' aria-label='Activity overview'>
             <Heatmap checkIns={checkIns || []} />
           </div>
         )}
 
-        {/* Add Habit */}
-        <form
-          onSubmit={(e) => {
-            e.preventDefault()
-            const input = e.currentTarget.elements.namedItem('habit') as HTMLInputElement
-            addHabit(input.value)
-            input.value = ''
-          }}
-          className='flex gap-2 mb-8'
-        >
-          <input
-            name='habit'
-            type='text'
-            placeholder='New habit...'
-            className='flex-1 px-3 py-2 border border-slate-300 rounded focus:outline-none focus:ring-1 focus:ring-slate-400'
-          />
-          <button type='submit' className='px-4 py-2 bg-slate-900 text-white rounded hover:bg-slate-800'>
-            Add
-          </button>
-        </form>
+        <main id='main-content' role='main'>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault()
+              const input = e.currentTarget.elements.namedItem('habit') as HTMLInputElement
+              addHabit(input.value)
+              input.value = ''
+            }}
+            className='flex gap-2 mb-8'
+            aria-label='Add new habit'
+          >
+            <input
+              ref={inputRef}
+              id='habit-input'
+              name='habit'
+              type='text'
+              placeholder='New habit...'
+              aria-label='New habit name'
+              aria-describedby='habit-help shortcut-help'
+              className='flex-1 px-3 py-2 border border-slate-300 rounded focus:outline-none focus:ring-1 focus:ring-slate-400'
+            />
+            <button
+              type='submit'
+              className='px-4 py-2 bg-slate-900 text-white rounded hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2'
+              aria-label='Add habit'
+            >
+              Add
+            </button>
+          </form>
 
-        {/* Habits List */}
-        <div className='space-y-2'>
-          {habits?.map((habit) => (
-            <div key={habit.id} className='flex items-center justify-between p-3 border border-slate-200 rounded'>
-              <div className='flex items-center gap-3'>
-                <input type='checkbox' checked={isCheckedToday(habit.id)} onChange={() => toggleCheckIn(habit.id)} className='w-4 h-4' />
-                <span className={isCheckedToday(habit.id) ? 'line-through text-slate-500' : ''}>{habit.name}</span>
-              </div>
-              <button onClick={() => deleteHabit(habit.id)} className='text-slate-400 hover:text-slate-600 text-sm'>
-                ×
-              </button>
-            </div>
-          ))}
-        </div>
+          <p id='habit-help' className='sr-only'>
+            Enter a habit name and press Add or Enter to create it
+          </p>
+          <p id='shortcut-help' className='sr-only'>
+            Press Control N to quickly focus this input, use J and K or arrow keys to navigate habits, Space to toggle
+          </p>
 
-        {habits && habits.length === 0 && <div className='text-center text-slate-500 py-12'>No habits yet. Add one above!</div>}
+          <section aria-label='Your habits'>
+            <ul className='space-y-2' role='list'>
+              {habits?.map((habit) => (
+                <HabitItem
+                  key={habit.id}
+                  ref={(el) => {
+                    if (el) {
+                      habitRefs.current.set(habit.id, el)
+                    }
+                  }}
+                  habit={habit}
+                  isChecked={isCheckedToday(habit.id)}
+                  isFocused={focusedHabitId === habit.id}
+                  onToggle={() => toggleCheckIn(habit.id, habit.name)}
+                  onDelete={() => deleteHabit(habit.id, habit.name)}
+                  onFocus={() => setFocusedHabitId(habit.id)}
+                  onNavigate={(direction) => handleNavigate(habit.id, direction)}
+                />
+              ))}
+            </ul>
+          </section>
+
+          {habits && habits.length === 0 && (
+            <p className='text-center text-slate-500 py-12' role='status'>
+              No habits yet. Add one above!
+            </p>
+          )}
+        </main>
       </div>
+
+      <div className='sr-only' role='status' aria-live='polite' aria-atomic='true'>
+        {liveRegionText}
+      </div>
+
+      <KeyboardShortcutsButton onClick={() => setShowKeyboardShortcuts(true)} />
+      <KeyboardShortcuts isOpen={showKeyboardShortcuts} onClose={() => setShowKeyboardShortcuts(false)} />
     </div>
   )
 }

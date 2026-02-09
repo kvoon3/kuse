@@ -34,6 +34,9 @@ const COLORS = {
 }
 
 export function Heatmap({ checkIns, habitId, className }: HeatmapProps) {
+  const [focusedIndex, setFocusedIndex] = React.useState<number | null>(null)
+  const gridRef = React.useRef<SVGSVGElement>(null)
+
   const calendarData = React.useMemo(() => {
     const today = new Date()
     const currentDayOfWeek = today.getDay()
@@ -90,46 +93,137 @@ export function Heatmap({ checkIns, habitId, className }: HeatmapProps) {
     return weeksArray
   }, [calendarData])
 
+  // Handle keyboard navigation
+  const handleKeyDown = React.useCallback(
+    (event: React.KeyboardEvent, weekIndex: number, dayIndex: number) => {
+      const currentIndex = weekIndex * 7 + dayIndex
+      let newIndex: number | null = null
+
+      switch (event.key) {
+        case 'ArrowRight':
+          event.preventDefault()
+          newIndex = Math.min(currentIndex + 7, calendarData.length - 1)
+          break
+        case 'ArrowLeft':
+          event.preventDefault()
+          newIndex = Math.max(currentIndex - 7, 0)
+          break
+        case 'ArrowDown':
+          event.preventDefault()
+          newIndex = Math.min(currentIndex + 1, calendarData.length - 1)
+          break
+        case 'ArrowUp':
+          event.preventDefault()
+          newIndex = Math.max(currentIndex - 1, 0)
+          break
+        case 'Home':
+          event.preventDefault()
+          newIndex = weekIndex * 7
+          break
+        case 'End':
+          event.preventDefault()
+          newIndex = Math.min(weekIndex * 7 + 6, calendarData.length - 1)
+          break
+        default:
+          return
+      }
+
+      if (newIndex !== null) {
+        setFocusedIndex(newIndex)
+        // Focus the new element after render
+        setTimeout(() => {
+          const element = document.querySelector(`[data-heatmap-index="${newIndex}"]`) as HTMLElement
+          element?.focus()
+        }, 0)
+      }
+    },
+    [calendarData.length]
+  )
+
+  // Handle focus management
+  const handleFocus = React.useCallback((index: number) => {
+    setFocusedIndex(index)
+  }, [])
+
+  const handleBlur = React.useCallback(() => {
+    setFocusedIndex(null)
+  }, [])
+
+  // Generate aria-label for each cell
+  const getAriaLabel = React.useCallback((day: DayData): string => {
+    const dateStr = day.date.toLocaleDateString(undefined, {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    })
+    if (day.count === 0) {
+      return `No check-ins on ${dateStr}`
+    }
+    return `${day.count} ${day.count === 1 ? 'check-in' : 'check-ins'} on ${dateStr}`
+  }, [])
+
   return (
     <TooltipProvider>
-      <div className={cn('overflow-x-auto', className)}>
-        <svg width={weeks.length * CELL_SIZE} height={DAY_COUNT * CELL_SIZE} className='block'>
+      <div className={cn('overflow-x-auto', className)} role='region' aria-label='Activity heatmap showing check-ins over the past year'>
+        <svg ref={gridRef} width={weeks.length * CELL_SIZE} height={DAY_COUNT * CELL_SIZE} className='block' role='grid' aria-label='Check-in activity grid'>
           {weeks.map((week, weekIndex) => (
-            <g key={weekIndex} transform={`translate(${weekIndex * CELL_SIZE}, 0)`}>
-              {week.map((day, dayIndex) => (
-                <Tooltip key={day.dateStr}>
-                  <TooltipTrigger asChild>
-                    <rect
-                      x={0}
-                      y={dayIndex * CELL_SIZE}
-                      width={RECT_SIZE}
-                      height={RECT_SIZE}
-                      rx={2}
-                      ry={2}
-                      fill={COLORS[day.level]}
-                      className='transition-colors duration-200 hover:stroke-foreground/20 hover:stroke-2'
-                    />
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <div className='text-center'>
-                      <div className='font-semibold'>
-                        {day.count} {day.count === 1 ? 'check-in' : 'check-ins'}
+            <g key={weekIndex} transform={`translate(${weekIndex * CELL_SIZE}, 0)`} role='row'>
+              {week.map((day, dayIndex) => {
+                const index = weekIndex * 7 + dayIndex
+                const isFocused = focusedIndex === index
+
+                return (
+                  <Tooltip key={day.dateStr}>
+                    <TooltipTrigger asChild>
+                      <rect
+                        data-heatmap-index={index}
+                        x={0}
+                        y={dayIndex * CELL_SIZE}
+                        width={RECT_SIZE}
+                        height={RECT_SIZE}
+                        rx={2}
+                        ry={2}
+                        fill={COLORS[day.level]}
+                        tabIndex={0}
+                        role='gridcell'
+                        aria-label={getAriaLabel(day)}
+                        aria-selected={isFocused}
+                        onFocus={() => handleFocus(index)}
+                        onBlur={handleBlur}
+                        onKeyDown={(e) => handleKeyDown(e, weekIndex, dayIndex)}
+                        className={cn(
+                          'transition-colors duration-200 hover:stroke-foreground/20 hover:stroke-2',
+                          'focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1',
+                          isFocused && 'stroke-foreground/40 stroke-2'
+                        )}
+                      />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <div className='text-center'>
+                        <div className='font-semibold'>
+                          {day.count} {day.count === 1 ? 'check-in' : 'check-ins'}
+                        </div>
+                        <div className='text-xs text-muted-foreground'>
+                          {day.date.toLocaleDateString(undefined, {
+                            weekday: 'short',
+                            year: 'numeric',
+                            month: 'short',
+                            day: 'numeric',
+                          })}
+                        </div>
                       </div>
-                      <div className='text-xs text-muted-foreground'>
-                        {day.date.toLocaleDateString(undefined, {
-                          weekday: 'short',
-                          year: 'numeric',
-                          month: 'short',
-                          day: 'numeric',
-                        })}
-                      </div>
-                    </div>
-                  </TooltipContent>
-                </Tooltip>
-              ))}
+                    </TooltipContent>
+                  </Tooltip>
+                )
+              })}
             </g>
           ))}
         </svg>
+        {/* Hidden live region for screen reader announcements */}
+        <div className='sr-only' role='status' aria-live='polite' aria-atomic='true'>
+          {focusedIndex !== null && calendarData[focusedIndex] ? getAriaLabel(calendarData[focusedIndex]) : ''}
+        </div>
       </div>
     </TooltipProvider>
   )
