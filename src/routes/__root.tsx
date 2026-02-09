@@ -3,6 +3,7 @@ import { HeadContent, Scripts, createRootRoute, Outlet } from '@tanstack/react-r
 import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
 
 import appCss from '../styles.css?url'
+import { Footer } from '~/components/Footer'
 import { Header } from '~/components/Header'
 import { ThemeProvider } from '~/components/ThemeProvider'
 
@@ -51,6 +52,7 @@ function RootDocument() {
           <main className='flex-1'>
             <Outlet />
           </main>
+          <Footer />
         </div>
         <TanStackDevtools
           config={{
