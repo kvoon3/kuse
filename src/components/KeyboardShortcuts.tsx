@@ -62,7 +62,11 @@ export function KeyboardShortcuts({ isOpen, onClose }: KeyboardShortcutsProps) {
           <h2 id='keyboard-shortcuts-title' className='text-lg font-semibold text-base'>
             Keyboard Shortcuts
           </h2>
-          <button onClick={onClose} className='text-muted hover:text-base p-1 rounded focus-visible-ring' aria-label='Close keyboard shortcuts'>
+          <button
+            onClick={onClose}
+            className='text-muted hover:text-base p-1 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
+            aria-label='Close keyboard shortcuts'
+          >
             <span aria-hidden='true'>×</span>
           </button>
         </div>
@@ -103,10 +107,10 @@ export function KeyboardShortcutsButton({ onClick }: { onClick: () => void }) {
       className={cn(
         'fixed bottom-4 right-4 z-30',
         'w-12 h-12 rounded-full',
-        'bg-primary-solid text-inverted',
+        'bg-muted text-muted-foreground',
         'flex items-center justify-center',
-        'shadow-lg bg-primary-solid-hover',
-        'focus-visible-ring',
+        'shadow-lg hover:bg-secondary hover:text-secondary-foreground',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
         'transition-colors duration-200'
       )}
       aria-label='Show keyboard shortcuts (press ?)'
