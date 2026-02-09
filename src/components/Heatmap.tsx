@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState, type KeyboardEvent } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react'
 
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '~/components/ui/tooltip'
 import { cn, toLocalDateStr } from '~/lib/utils'
@@ -29,6 +29,13 @@ const HEATMAP_COLORS = ['var(--heatmap-0)', 'var(--heatmap-1)', 'var(--heatmap-2
 export function Heatmap({ checkIns, habitId, className }: HeatmapProps) {
   const [focusedIndex, setFocusedIndex] = useState<number | null>(null)
   const gridRef = useRef<SVGSVGElement>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (containerRef.current) {
+      containerRef.current.scrollLeft = containerRef.current.scrollWidth
+    }
+  }, [])
 
   const calendarData = useMemo(() => {
     const today = new Date()
@@ -158,8 +165,20 @@ export function Heatmap({ checkIns, habitId, className }: HeatmapProps) {
 
   return (
     <TooltipProvider>
-      <div className={cn('overflow-x-auto', className)} role='region' aria-label='Activity heatmap showing check-ins over the past year'>
-        <svg ref={gridRef} width={weeks.length * CELL_SIZE} height={DAY_COUNT * CELL_SIZE} className='block' role='grid' aria-label='Check-in activity grid'>
+      <div
+        ref={containerRef}
+        className={cn('overflow-x-auto scrollbar-hide -mx-3 sm:mx-0 px-3 sm:px-0', 'touch-pan-x', className)}
+        role='region'
+        aria-label='Activity heatmap showing check-ins over the past year'
+      >
+        <svg
+          ref={gridRef}
+          width={weeks.length * CELL_SIZE}
+          height={DAY_COUNT * CELL_SIZE}
+          className='block mx-auto sm:mx-0'
+          role='grid'
+          aria-label='Check-in activity grid'
+        >
           {weeks.map((week, weekIndex) => (
             <g key={weekIndex} transform={`translate(${weekIndex * CELL_SIZE}, 0)`} role='row'>
               {week.map((day, dayIndex) => {

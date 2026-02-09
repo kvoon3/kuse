@@ -46,7 +46,6 @@ function Home() {
     return () => document.removeEventListener('keydown', handleKeyDown)
   }, [])
 
-  // Clear newlyAddedId after focus effect runs
   useEffect(() => {
     if (newlyAddedId && focusedHabitId === newlyAddedId) {
       setNewlyAddedId(null)
@@ -78,7 +77,6 @@ function Home() {
     setCheckIns(checkIns?.filter((c) => c.habitId !== id) || [])
     announce(`Deleted habit: ${name}`)
 
-    // Focus next item or previous if deleting last
     if (habits && habits.length > 1) {
       const nextIndex = Math.min(currentIndex, habits.length - 2)
       const nextHabit = habits[nextIndex === currentIndex ? nextIndex + 1 : nextIndex]
@@ -124,82 +122,93 @@ function Home() {
   }
 
   return (
-    <div className='p-4 pt-6'>
+    <div className='p-3 sm:p-4 pt-4 sm:pt-6'>
       <a href='#main-content' className='skip-link'>
         Skip to main content
       </a>
 
-      <div className='max-w-3xl mx-auto'>
+      <div className='max-w-6xl mx-auto'>
         {habits && habits.length > 0 && (
-          <div className='mb-8 p-4 mx-auto border border-base rounded-lg w-fit bg-card' role='region' aria-label='Activity overview'>
+          <div className='mb-6 sm:mb-8 p-3 sm:p-4 border border-base rounded-lg bg-card overflow-hidden' role='region' aria-label='Activity overview'>
             <Heatmap checkIns={checkIns || []} />
           </div>
         )}
 
         <main id='main-content' role='main'>
-          <form
-            onSubmit={(e) => {
-              e.preventDefault()
-              const input = e.currentTarget.elements.namedItem('habit') as HTMLInputElement
-              addHabit(input.value)
-              input.value = ''
-            }}
-            className='flex gap-2 mb-8'
-            aria-label='Add new habit'
-          >
-            <input
-              ref={inputRef}
-              id='habit-input'
-              name='habit'
-              type='text'
-              placeholder='New habit...'
-              aria-label='New habit name'
-              aria-describedby='habit-help shortcut-help'
-              className='flex-1 px-3 py-2 border border-base rounded-lg bg-base focus:outline-none focus:ring-2 focus-visible:ring-ring'
-            />
-            <button
-              type='submit'
-              className='px-4 py-2 bg-primary-solid text-inverted rounded-lg hover:bg-primary-solid-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
-              aria-label='Add habit'
-            >
-              Add
-            </button>
-          </form>
-
-          <p id='habit-help' className='sr-only'>
-            Enter a habit name and press Add or Enter to create it
-          </p>
-          <p id='shortcut-help' className='sr-only'>
-            Press Control N to quickly focus this input, use J and K or arrow keys to navigate habits, Space to toggle
-          </p>
-
-          <section aria-label='Your habits'>
-            <ul className='space-y-2' role='list'>
-              {habits?.map((habit) => (
-                <HabitItem
-                  key={habit.id}
-                  ref={(el) => {
-                    if (el) {
-                      habitRefs.current.set(habit.id, el)
-                    }
-                  }}
-                  habit={habit}
-                  isChecked={isCheckedToday(habit.id)}
-                  isFocused={focusedHabitId === habit.id}
-                  onToggle={() => toggleCheckIn(habit.id, habit.name)}
-                  onDelete={() => deleteHabit(habit.id, habit.name)}
-                  onFocus={() => setFocusedHabitId(habit.id)}
-                  onNavigate={(direction) => handleNavigate(habit.id, direction)}
+          <div className='grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6'>
+            <section aria-label='Your habits' className='w-full min-w-0'>
+              <h2 className='text-lg font-semibold mb-3 px-1'>Habits</h2>
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault()
+                  const input = e.currentTarget.elements.namedItem('habit') as HTMLInputElement
+                  addHabit(input.value)
+                  input.value = ''
+                }}
+                className='flex gap-2 mb-4'
+                aria-label='Add new habit'
+              >
+                <input
+                  ref={inputRef}
+                  id='habit-input'
+                  name='habit'
+                  type='text'
+                  placeholder='New habit...'
+                  aria-label='New habit name'
+                  aria-describedby='habit-help shortcut-help'
+                  className='flex-1 min-w-0 px-3 py-2.5 sm:py-2 text-base sm:text-sm border border-base rounded-lg bg-base focus:outline-none focus:ring-2 focus-visible:ring-ring'
                 />
-              ))}
-            </ul>
-          </section>
+                <button
+                  type='submit'
+                  className='px-4 sm:px-6 py-2.5 sm:py-2 bg-primary-solid text-inverted rounded-lg hover:bg-primary-solid-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring whitespace-nowrap'
+                  aria-label='Add habit'
+                >
+                  Add
+                </button>
+              </form>
 
-          {habits && habits.length === 0 && (
-            <p className='text-center text-muted py-12' role='status'>
-              No habits yet. Add one above!
-            </p>
-          )}
+              <p id='habit-help' className='sr-only'>
+                Enter a habit name and press Add or Enter to create it
+              </p>
+              <p id='shortcut-help' className='sr-only'>
+                Press Control N to quickly focus this input, use J and K or arrow keys to navigate habits, Space to toggle
+              </p>
+
+              <ul className='space-y-2 sm:space-y-3' role='list'>
+                {habits?.map((habit) => (
+                  <HabitItem
+                    ref={(el) => {
+                      if (el) {
+                        habitRefs.current.set(habit.id, el)
+                      }
+                    }}
+                    key={habit.id}
+                    habit={habit}
+                    isChecked={isCheckedToday(habit.id)}
+                    isFocused={focusedHabitId === habit.id}
+                    onToggle={() => toggleCheckIn(habit.id, habit.name)}
+                    onDelete={() => deleteHabit(habit.id, habit.name)}
+                    onFocus={() => setFocusedHabitId(habit.id)}
+                    onNavigate={(direction) => handleNavigate(habit.id, direction)}
+                  />
+                ))}
+              </ul>
+
+              {habits && habits.length === 0 && (
+                <p className='text-center text-muted py-12' role='status'>
+                  No habits yet. Add one above!
+                </p>
+              )}
+            </section>
+
+            <section aria-label='Todo list' className='w-full min-w-0'>
+              <h2 className='text-lg font-semibold mb-3 px-1'>Todo List</h2>
+              <div className='p-4 sm:p-6 border border-dashed border-base rounded-lg bg-muted/30 text-center'>
+                <p className='text-muted text-sm sm:text-base'>Todo list coming soon...</p>
+                <p className='text-muted-foreground text-xs sm:text-sm mt-2'>Track your daily tasks here</p>
+              </div>
+            </section>
+          </div>
         </main>
       </div>
 

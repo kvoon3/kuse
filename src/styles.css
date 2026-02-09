@@ -193,6 +193,13 @@ code {
   }
 
   /* Ring/focus utilities - use Tailwind's ring classes directly in components */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
 }
 
 /* Skip link styles */
