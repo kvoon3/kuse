@@ -167,7 +167,7 @@ export function Heatmap({ checkIns, habitId, className }: HeatmapProps) {
     <TooltipProvider>
       <div
         ref={containerRef}
-        className={cn('overflow-x-auto scrollbar-hide -mx-3 sm:mx-0 px-3 sm:px-0', 'touch-pan-x', className)}
+        className={cn('overflow-x-auto -mx-3 sm:mx-0 px-3 sm:px-0', 'touch-pan-x', className)}
         role='region'
         aria-label='Activity heatmap showing check-ins over the past year'
       >

@@ -127,9 +127,13 @@ function Home() {
         Skip to main content
       </a>
 
-      <div className='max-w-6xl mx-auto'>
+      <div className='mx-auto'>
         {habits && habits.length > 0 && (
-          <div className='mb-6 sm:mb-8 p-3 sm:p-4 border border-base rounded-lg bg-card overflow-hidden' role='region' aria-label='Activity overview'>
+          <div
+            className='my-4 border p-4 border-base w-full md:w-fit md:mx-auto rounded-lg bg-card overflow-hidden'
+            role='region'
+            aria-label='Activity overview'
+          >
             <Heatmap checkIns={checkIns || []} />
           </div>
         )}
