@@ -3,10 +3,11 @@ import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent }
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '~/components/ui/tooltip'
 import { cn, toLocalDateStr } from '~/lib/utils'
 
-import type { CheckIn } from '~/types/habit'
+import type { CheckIn, Todo } from '~/types/habit'
 
 type HeatmapProps = {
   checkIns: CheckIn[]
+  todos?: Todo[]
   habitId?: string
   className?: string
 }
@@ -14,8 +15,14 @@ type HeatmapProps = {
 type DayData = {
   date: Date
   dateStr: string
-  count: number
-  level: 0 | 1 | 2 | 3 | 4
+  habitCount: number
+  todoCount: number
+  completedTodoCount: number
+  incompleteTodoCount: number
+  greenLevel: 0 | 1 | 2 | 3 | 4
+  orangeLevel: 0 | 1 | 2 | 3 | 4
+  hasIncompleteTodos: boolean
+  hasCompletedItems: boolean
 }
 
 const RECT_SIZE = 10
@@ -24,9 +31,24 @@ const CELL_SIZE = RECT_SIZE + RECT_GAP
 const WEEK_COUNT = 53
 const DAY_COUNT = 7
 
-const HEATMAP_COLORS = ['var(--heatmap-0)', 'var(--heatmap-1)', 'var(--heatmap-2)', 'var(--heatmap-3)', 'var(--heatmap-4)'] as const
+const GREEN_COLORS = ['var(--heatmap-0)', 'var(--heatmap-1)', 'var(--heatmap-2)', 'var(--heatmap-3)', 'var(--heatmap-4)'] as const
+const ORANGE_COLORS = [
+  'var(--heatmap-orange-0)',
+  'var(--heatmap-orange-1)',
+  'var(--heatmap-orange-2)',
+  'var(--heatmap-orange-3)',
+  'var(--heatmap-orange-4)',
+] as const
 
-export function Heatmap({ checkIns, habitId, className }: HeatmapProps) {
+function getLevel(count: number): 0 | 1 | 2 | 3 | 4 {
+  if (count === 0) return 0
+  if (count === 1) return 1
+  if (count === 2) return 2
+  if (count === 3) return 3
+  return 4
+}
+
+export function Heatmap({ checkIns, todos = [], habitId, className }: HeatmapProps) {
   const [focusedIndex, setFocusedIndex] = useState<number | null>(null)
   const gridRef = useRef<SVGSVGElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
@@ -41,12 +63,10 @@ export function Heatmap({ checkIns, habitId, className }: HeatmapProps) {
     const today = new Date()
     const currentDayOfWeek = today.getDay()
 
-    // Align to Sunday of the current week
     const currentWeekStart = new Date(today)
     currentWeekStart.setDate(today.getDate() - currentDayOfWeek)
     currentWeekStart.setHours(0, 0, 0, 0)
 
-    // Start date is 52 weeks before current week start to get 53 columns total
     const startDate = new Date(currentWeekStart)
     startDate.setDate(currentWeekStart.getDate() - 52 * 7)
 
@@ -60,30 +80,52 @@ export function Heatmap({ checkIns, habitId, className }: HeatmapProps) {
       checkInsByDate.set(dateKey, (checkInsByDate.get(dateKey) || 0) + 1)
     })
 
+    const todosByDate = new Map<string, { total: number; completed: number }>()
+    todos.forEach((t) => {
+      const dateKey = t.date
+      const existing = todosByDate.get(dateKey) || { total: 0, completed: 0 }
+      existing.total += 1
+      if (t.completed) {
+        existing.completed += 1
+      }
+      todosByDate.set(dateKey, existing)
+    })
+
     for (let i = 0; i < WEEK_COUNT * DAY_COUNT; i++) {
       const currentDate = new Date(startDate)
       currentDate.setDate(startDate.getDate() + i)
 
       const dateStr = toLocalDateStr(currentDate)
-      const count = checkInsByDate.get(dateStr) || 0
+      const habitCount = checkInsByDate.get(dateStr) || 0
+      const todoData = todosByDate.get(dateStr) || { total: 0, completed: 0 }
+      const todoCount = todoData.total
+      const completedTodoCount = todoData.completed
 
-      let level: 0 | 1 | 2 | 3 | 4 = 0
-      if (count === 0) level = 0
-      else if (count === 1) level = 1
-      else if (count === 2) level = 2
-      else if (count === 3) level = 3
-      else level = 4
+      const incompleteTodoCount = todoCount - completedTodoCount
+      const hasIncompleteTodos = incompleteTodoCount > 0
+      const hasCompletedItems = habitCount > 0 || completedTodoCount > 0
+
+      const orangeLevel = getLevel(incompleteTodoCount)
+
+      const completedCount = habitCount + completedTodoCount
+      const greenLevel = getLevel(completedCount)
 
       data.push({
         date: currentDate,
         dateStr,
-        count,
-        level,
+        habitCount,
+        todoCount,
+        completedTodoCount,
+        incompleteTodoCount,
+        greenLevel,
+        orangeLevel,
+        hasIncompleteTodos,
+        hasCompletedItems,
       })
     }
 
     return data
-  }, [checkIns, habitId])
+  }, [checkIns, todos, habitId])
 
   const weeks = useMemo(() => {
     const weeksArray: DayData[][] = []
@@ -93,7 +135,6 @@ export function Heatmap({ checkIns, habitId, className }: HeatmapProps) {
     return weeksArray
   }, [calendarData])
 
-  // Handle keyboard navigation
   const handleKeyDown = useCallback(
     (event: KeyboardEvent, weekIndex: number, dayIndex: number) => {
       const currentIndex = weekIndex * 7 + dayIndex
@@ -130,7 +171,6 @@ export function Heatmap({ checkIns, habitId, className }: HeatmapProps) {
 
       if (newIndex !== null) {
         setFocusedIndex(newIndex)
-        // Focus the new element after render
         setTimeout(() => {
           const element = document.querySelector(`[data-heatmap-index="${newIndex}"]`) as HTMLElement
           element?.focus()
@@ -140,7 +180,6 @@ export function Heatmap({ checkIns, habitId, className }: HeatmapProps) {
     [calendarData.length]
   )
 
-  // Handle focus management
   const handleFocus = useCallback((index: number) => {
     setFocusedIndex(index)
   }, [])
@@ -149,7 +188,6 @@ export function Heatmap({ checkIns, habitId, className }: HeatmapProps) {
     setFocusedIndex(null)
   }, [])
 
-  // Generate aria-label for each cell
   const getAriaLabel = useCallback((day: DayData): string => {
     const dateStr = day.date.toLocaleDateString(undefined, {
       weekday: 'long',
@@ -157,11 +195,32 @@ export function Heatmap({ checkIns, habitId, className }: HeatmapProps) {
       month: 'long',
       day: 'numeric',
     })
-    if (day.count === 0) {
-      return `No check-ins on ${dateStr}`
+    const parts: string[] = []
+    if (day.habitCount > 0) {
+      parts.push(`${day.habitCount} ${day.habitCount === 1 ? 'habit' : 'habits'}`)
     }
-    return `${day.count} ${day.count === 1 ? 'check-in' : 'check-ins'} on ${dateStr}`
+    const incompleteTodos = day.todoCount - day.completedTodoCount
+    if (incompleteTodos > 0) {
+      parts.push(`${incompleteTodos} pending ${incompleteTodos === 1 ? 'todo' : 'todos'}`)
+    }
+    if (day.completedTodoCount > 0) {
+      parts.push(`${day.completedTodoCount} completed ${day.completedTodoCount === 1 ? 'todo' : 'todos'}`)
+    }
+    if (parts.length === 0) {
+      return `No activity on ${dateStr}`
+    }
+    return `${parts.join(', ')} on ${dateStr}`
   }, [])
+
+  const getCellColor = (day: DayData): string => {
+    if (day.hasIncompleteTodos) {
+      return ORANGE_COLORS[day.orangeLevel]
+    }
+    if (day.hasCompletedItems) {
+      return GREEN_COLORS[day.greenLevel]
+    }
+    return GREEN_COLORS[0]
+  }
 
   return (
     <TooltipProvider>
@@ -169,7 +228,7 @@ export function Heatmap({ checkIns, habitId, className }: HeatmapProps) {
         ref={containerRef}
         className={cn('overflow-x-auto -mx-3 sm:mx-0 px-3 sm:px-0', 'touch-pan-x', className)}
         role='region'
-        aria-label='Activity heatmap showing check-ins over the past year'
+        aria-label='Activity heatmap showing habits and todos over the past year'
       >
         <svg
           ref={gridRef}
@@ -177,13 +236,14 @@ export function Heatmap({ checkIns, habitId, className }: HeatmapProps) {
           height={DAY_COUNT * CELL_SIZE}
           className='block mx-auto sm:mx-0'
           role='grid'
-          aria-label='Check-in activity grid'
+          aria-label='Activity grid'
         >
           {weeks.map((week, weekIndex) => (
             <g key={weekIndex} transform={`translate(${weekIndex * CELL_SIZE}, 0)`} role='row'>
               {week.map((day, dayIndex) => {
                 const index = weekIndex * 7 + dayIndex
                 const isFocused = focusedIndex === index
+                const cellColor = getCellColor(day)
 
                 return (
                   <Tooltip key={day.dateStr}>
@@ -196,7 +256,7 @@ export function Heatmap({ checkIns, habitId, className }: HeatmapProps) {
                         height={RECT_SIZE}
                         rx={2}
                         ry={2}
-                        fill={HEATMAP_COLORS[day.level]}
+                        fill={cellColor}
                         tabIndex={0}
                         role='gridcell'
                         aria-label={getAriaLabel(day)}
@@ -214,7 +274,21 @@ export function Heatmap({ checkIns, habitId, className }: HeatmapProps) {
                     <TooltipContent>
                       <div className='text-center'>
                         <div className='font-semibold'>
-                          {day.count} {day.count === 1 ? 'check-in' : 'check-ins'}
+                          {day.habitCount > 0 && (
+                            <div className='text-green-600 dark:text-green-400'>
+                              {day.habitCount} {day.habitCount === 1 ? 'habit' : 'habits'}
+                            </div>
+                          )}
+                          {day.todoCount > 0 && (
+                            <div
+                              className={
+                                day.completedTodoCount === day.todoCount ? 'text-green-600 dark:text-green-400' : 'text-orange-600 dark:text-orange-400'
+                              }
+                            >
+                              {day.completedTodoCount}/{day.todoCount} todos
+                            </div>
+                          )}
+                          {day.habitCount === 0 && day.todoCount === 0 && <div>No activity</div>}
                         </div>
                         <div className='text-xs text-muted-foreground'>
                           {day.date.toLocaleDateString(undefined, {
@@ -232,7 +306,6 @@ export function Heatmap({ checkIns, habitId, className }: HeatmapProps) {
             </g>
           ))}
         </svg>
-        {/* Hidden live region for screen reader announcements */}
         <div className='sr-only' role='status' aria-live='polite' aria-atomic='true'>
           {focusedIndex !== null && calendarData[focusedIndex] ? getAriaLabel(calendarData[focusedIndex]) : ''}
         </div>

@@ -10,3 +10,11 @@ export type CheckIn = {
   date: string
   message: string
 }
+
+export type Todo = {
+  id: string
+  name: string
+  completed: boolean
+  date: string
+  createdAt: string
+}

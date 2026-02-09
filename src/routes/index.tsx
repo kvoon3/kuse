@@ -5,28 +5,56 @@ import { useLocalStorage } from 'react-use'
 import { HabitItem } from '~/components/HabitItem'
 import { Heatmap } from '~/components/Heatmap'
 import { KeyboardShortcuts, KeyboardShortcutsButton } from '~/components/KeyboardShortcuts'
+import { TodoItem } from '~/components/TodoItem'
 import { toLocalDateStr } from '~/lib/utils'
 
-import type { Habit, CheckIn } from '~/types/habit'
+import type { Habit, CheckIn, Todo } from '~/types/habit'
 
 export const Route = createFileRoute('/')({ component: Home })
 
 function Home() {
   const [habits, setHabits] = useLocalStorage<Habit[]>('habits', [])
   const [checkIns, setCheckIns] = useLocalStorage<CheckIn[]>('checkIns', [])
+  const [todos, setTodos] = useLocalStorage<Todo[]>('todos', [])
   const [liveRegionText, setLiveRegionText] = useState('')
   const [focusedHabitId, setFocusedHabitId] = useState<string | null>(null)
-  const [newlyAddedId, setNewlyAddedId] = useState<string | null>(null)
+  const [focusedTodoId, setFocusedTodoId] = useState<string | null>(null)
+  const [newlyAddedHabitId, setNewlyAddedHabitId] = useState<string | null>(null)
+  const [newlyAddedTodoId, setNewlyAddedTodoId] = useState<string | null>(null)
   const [showKeyboardShortcuts, setShowKeyboardShortcuts] = useState(false)
-  const inputRef = useRef<HTMLInputElement>(null)
+  const [activeSection, setActiveSection] = useState<'habits' | 'todos'>('habits')
+  const habitInputRef = useRef<HTMLInputElement>(null)
+  const todoInputRef = useRef<HTMLInputElement>(null)
   const habitRefs = useRef<Map<string, HTMLLIElement>>(new Map())
+  const todoRefs = useRef<Map<string, HTMLLIElement>>(new Map())
+
+  const today = toLocalDateStr(new Date())
+  const todaysTodos = todos?.filter((t) => t.date === today) || []
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
         e.preventDefault()
-        inputRef.current?.focus()
+        if (activeSection === 'habits') {
+          habitInputRef.current?.focus()
+        } else {
+          todoInputRef.current?.focus()
+        }
         return
+      }
+
+      if (e.key === 'Tab' && !e.shiftKey) {
+        const activeElement = document.activeElement
+        const lastHabit = habits && habits.length > 0 ? habits[habits.length - 1].id : null
+        if (lastHabit && habitRefs.current.get(lastHabit) === activeElement) {
+          e.preventDefault()
+          setActiveSection('todos')
+          setFocusedTodoId(todaysTodos[0]?.id || null)
+          if (todaysTodos.length > 0 && todoRefs.current.get(todaysTodos[0].id)) {
+            todoRefs.current.get(todaysTodos[0].id)?.focus()
+          }
+          return
+        }
       }
 
       if (
@@ -44,13 +72,19 @@ function Home() {
     }
     document.addEventListener('keydown', handleKeyDown)
     return () => document.removeEventListener('keydown', handleKeyDown)
-  }, [])
+  }, [activeSection, habits, todaysTodos])
 
   useEffect(() => {
-    if (newlyAddedId && focusedHabitId === newlyAddedId) {
-      setNewlyAddedId(null)
+    if (newlyAddedHabitId && focusedHabitId === newlyAddedHabitId) {
+      setNewlyAddedHabitId(null)
     }
-  }, [newlyAddedId, focusedHabitId])
+  }, [newlyAddedHabitId, focusedHabitId])
+
+  useEffect(() => {
+    if (newlyAddedTodoId && focusedTodoId === newlyAddedTodoId) {
+      setNewlyAddedTodoId(null)
+    }
+  }, [newlyAddedTodoId, focusedTodoId])
 
   const announce = useCallback((message: string) => {
     setLiveRegionText(message)
@@ -66,8 +100,9 @@ function Home() {
       createdAt: new Date().toISOString(),
     }
     setHabits([...(habits || []), newHabit])
-    setNewlyAddedId(newHabit.id)
+    setNewlyAddedHabitId(newHabit.id)
     setFocusedHabitId(newHabit.id)
+    setActiveSection('habits')
     announce(`Added habit: ${newHabit.name}`)
   }
 
@@ -89,7 +124,6 @@ function Home() {
   }
 
   const toggleCheckIn = (habitId: string, habitName: string): void => {
-    const today = toLocalDateStr(new Date())
     const existing = checkIns?.find((c) => c.habitId === habitId && toLocalDateStr(new Date(c.date)) === today)
 
     if (existing) {
@@ -102,11 +136,10 @@ function Home() {
   }
 
   const isCheckedToday = (habitId: string): boolean => {
-    const today = toLocalDateStr(new Date())
     return checkIns?.some((c) => c.habitId === habitId && toLocalDateStr(new Date(c.date)) === today) || false
   }
 
-  const handleNavigate = (habitId: string, direction: 'up' | 'down') => {
+  const handleHabitNavigate = (habitId: string, direction: 'up' | 'down') => {
     if (!habits) return
     const currentIndex = habits.findIndex((h) => h.id === habitId)
     if (currentIndex === -1) return
@@ -121,6 +154,70 @@ function Home() {
     setFocusedHabitId(habits[newIndex].id)
   }
 
+  const addTodo = (name: string): void => {
+    if (!name.trim()) return
+    const newTodo: Todo = {
+      id: crypto.randomUUID(),
+      name: name.trim(),
+      completed: false,
+      date: today,
+      createdAt: new Date().toISOString(),
+    }
+    setTodos([...(todos || []), newTodo])
+    setNewlyAddedTodoId(newTodo.id)
+    setFocusedTodoId(newTodo.id)
+    setActiveSection('todos')
+    announce(`Added todo: ${newTodo.name}`)
+  }
+
+  const deleteTodo = (id: string, name: string): void => {
+    const todaysTodosList = todaysTodos
+    const currentIndex = todaysTodosList.findIndex((t) => t.id === id)
+    setTodos(todos?.filter((t) => t.id !== id) || [])
+    announce(`Deleted todo: ${name}`)
+
+    if (todaysTodosList.length > 1) {
+      const nextIndex = Math.min(currentIndex, todaysTodosList.length - 2)
+      const nextTodo = todaysTodosList[nextIndex === currentIndex ? nextIndex + 1 : nextIndex]
+      if (nextTodo && nextTodo.id !== id) {
+        setFocusedTodoId(nextTodo.id)
+      } else if (todaysTodosList.length > 1) {
+        setFocusedTodoId(todaysTodosList[0].id)
+      }
+    }
+  }
+
+  const toggleTodo = (todoId: string, todoName: string): void => {
+    const todo = todos?.find((t) => t.id === todoId)
+    if (!todo) return
+
+    const updatedTodos = todos?.map((t) => (t.id === todoId ? { ...t, completed: !t.completed } : t)) || []
+    setTodos(updatedTodos)
+
+    if (todo.completed) {
+      announce(`Marked as not completed: ${todoName}`)
+    } else {
+      announce(`Completed: ${todoName}`)
+    }
+  }
+
+  const handleTodoNavigate = (todoId: string, direction: 'up' | 'down') => {
+    if (!todaysTodos.length) return
+    const currentIndex = todaysTodos.findIndex((t) => t.id === todoId)
+    if (currentIndex === -1) return
+
+    let newIndex: number
+    if (direction === 'up') {
+      newIndex = currentIndex > 0 ? currentIndex - 1 : todaysTodos.length - 1
+    } else {
+      newIndex = currentIndex < todaysTodos.length - 1 ? currentIndex + 1 : 0
+    }
+
+    setFocusedTodoId(todaysTodos[newIndex].id)
+  }
+
+  const hasAnyData = (habits && habits.length > 0) || (todos && todos.length > 0)
+
   return (
     <div className='p-3 sm:p-4 pt-4 sm:pt-6'>
       <a href='#main-content' className='skip-link'>
@@ -128,13 +225,13 @@ function Home() {
       </a>
 
       <div className='mx-auto'>
-        {habits && habits.length > 0 && (
+        {hasAnyData && (
           <div
             className='my-4 border p-4 border-base w-full md:w-fit md:mx-auto rounded-lg bg-card overflow-hidden'
             role='region'
             aria-label='Activity overview'
           >
-            <Heatmap checkIns={checkIns || []} />
+            <Heatmap checkIns={checkIns || []} todos={todos || []} />
           </div>
         )}
 
@@ -153,7 +250,7 @@ function Home() {
                 aria-label='Add new habit'
               >
                 <input
-                  ref={inputRef}
+                  ref={habitInputRef}
                   id='habit-input'
                   name='habit'
                   type='text'
@@ -161,6 +258,7 @@ function Home() {
                   aria-label='New habit name'
                   aria-describedby='habit-help shortcut-help'
                   className='flex-1 min-w-0 px-3 py-2.5 sm:py-2 text-base sm:text-sm border border-base rounded-lg bg-base focus:outline-none focus:ring-2 focus-visible:ring-ring'
+                  onFocus={() => setActiveSection('habits')}
                 />
                 <button
                   type='submit'
@@ -192,8 +290,11 @@ function Home() {
                     isFocused={focusedHabitId === habit.id}
                     onToggle={() => toggleCheckIn(habit.id, habit.name)}
                     onDelete={() => deleteHabit(habit.id, habit.name)}
-                    onFocus={() => setFocusedHabitId(habit.id)}
-                    onNavigate={(direction) => handleNavigate(habit.id, direction)}
+                    onFocus={() => {
+                      setFocusedHabitId(habit.id)
+                      setActiveSection('habits')
+                    }}
+                    onNavigate={(direction) => handleHabitNavigate(habit.id, direction)}
                   />
                 ))}
               </ul>
@@ -205,12 +306,72 @@ function Home() {
               )}
             </section>
 
-            <section aria-label='Todo list' className='w-full min-w-0'>
-              <h2 className='text-lg font-semibold mb-3 px-1'>Todo List</h2>
-              <div className='p-4 sm:p-6 border border-dashed border-base rounded-lg bg-muted/30 text-center'>
-                <p className='text-muted text-sm sm:text-base'>Todo list coming soon...</p>
-                <p className='text-muted-foreground text-xs sm:text-sm mt-2'>Track your daily tasks here</p>
-              </div>
+            <section aria-label='Your todos' className='w-full min-w-0'>
+              <h2 className='text-lg font-semibold mb-3 px-1'>Todos</h2>
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault()
+                  const input = e.currentTarget.elements.namedItem('todo') as HTMLInputElement
+                  addTodo(input.value)
+                  input.value = ''
+                }}
+                className='flex gap-2 mb-4'
+                aria-label='Add new todo'
+              >
+                <input
+                  ref={todoInputRef}
+                  id='todo-input'
+                  name='todo'
+                  type='text'
+                  placeholder='New todo for today...'
+                  aria-label='New todo name'
+                  aria-describedby='todo-help todo-shortcut-help'
+                  className='flex-1 min-w-0 px-3 py-2.5 sm:py-2 text-base sm:text-sm border border-base rounded-lg bg-base focus:outline-none focus:ring-2 focus-visible:ring-ring'
+                  onFocus={() => setActiveSection('todos')}
+                />
+                <button
+                  type='submit'
+                  className='px-4 sm:px-6 py-2.5 sm:py-2 bg-primary-solid text-inverted rounded-lg hover:bg-primary-solid-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring whitespace-nowrap'
+                  aria-label='Add todo'
+                >
+                  Add
+                </button>
+              </form>
+
+              <p id='todo-help' className='sr-only'>
+                Enter a todo name and press Add or Enter to create it for today
+              </p>
+              <p id='todo-shortcut-help' className='sr-only'>
+                Press Control N to quickly focus this input, use J and K or arrow keys to navigate todos, Space to toggle
+              </p>
+
+              <ul className='space-y-2 sm:space-y-3' role='list'>
+                {todaysTodos.map((todo) => (
+                  <TodoItem
+                    ref={(el) => {
+                      if (el) {
+                        todoRefs.current.set(todo.id, el)
+                      }
+                    }}
+                    key={todo.id}
+                    todo={todo}
+                    isFocused={focusedTodoId === todo.id}
+                    onToggle={() => toggleTodo(todo.id, todo.name)}
+                    onDelete={() => deleteTodo(todo.id, todo.name)}
+                    onFocus={() => {
+                      setFocusedTodoId(todo.id)
+                      setActiveSection('todos')
+                    }}
+                    onNavigate={(direction) => handleTodoNavigate(todo.id, direction)}
+                  />
+                ))}
+              </ul>
+
+              {todaysTodos.length === 0 && (
+                <p className='text-center text-muted py-12' role='status'>
+                  No todos for today. Add one above!
+                </p>
+              )}
             </section>
           </div>
         </main>

@@ -2,11 +2,10 @@ import { forwardRef, useEffect, useImperativeHandle, useRef, type KeyboardEvent 
 
 import { cn } from '~/lib/utils'
 
-import type { Habit } from '~/types/habit'
+import type { Todo } from '~/types/habit'
 
-type HabitItemProps = {
-  habit: Habit
-  isChecked: boolean
+type TodoItemProps = {
+  todo: Todo
   isFocused: boolean
   onToggle: () => void
   onDelete: () => void
@@ -14,10 +13,7 @@ type HabitItemProps = {
   onNavigate: (direction: 'up' | 'down') => void
 }
 
-export const HabitItem = forwardRef<HTMLLIElement, HabitItemProps>(function HabitItem(
-  { habit, isChecked, isFocused, onToggle, onDelete, onFocus, onNavigate },
-  ref
-) {
+export const TodoItem = forwardRef<HTMLLIElement, TodoItemProps>(function TodoItem({ todo, isFocused, onToggle, onDelete, onFocus, onNavigate }, ref) {
   const itemRef = useRef<HTMLLIElement>(null)
 
   useImperativeHandle(ref, () => itemRef.current!)
@@ -73,25 +69,25 @@ export const HabitItem = forwardRef<HTMLLIElement, HabitItemProps>(function Habi
       <div className='flex items-center gap-3 sm:gap-4 min-w-0 flex-1'>
         <input
           type='checkbox'
-          id={`habit-${habit.id}`}
-          checked={isChecked}
+          id={`todo-${todo.id}`}
+          checked={todo.completed}
           onChange={onToggle}
           className='w-5 h-5 sm:w-4 sm:h-4 flex-shrink-0 cursor-pointer'
           tabIndex={-1}
-          aria-label={`Mark ${habit.name} as ${isChecked ? 'not completed' : 'completed'}`}
+          aria-label={`Mark ${todo.name} as ${todo.completed ? 'not completed' : 'completed'}`}
         />
         <label
-          htmlFor={`habit-${habit.id}`}
-          className={cn(isChecked ? 'line-through text-muted' : '', 'cursor-pointer select-none text-base sm:text-sm truncate')}
+          htmlFor={`todo-${todo.id}`}
+          className={cn(todo.completed ? 'line-through text-muted' : '', 'cursor-pointer select-none text-base sm:text-sm truncate')}
         >
-          {habit.name}
+          {todo.name}
         </label>
       </div>
       <button
         onClick={onDelete}
-        className='text-muted  text-lg sm:text-sm p-2 sm:p-1 -mr-2 sm:mr-0 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring flex-shrink-0 min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center'
-        aria-label={`Delete ${habit.name}`}
-        title={`Delete ${habit.name}`}
+        className='text-muted text-lg sm:text-sm p-2 sm:p-1 -mr-2 sm:mr-0 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring flex-shrink-0 min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center'
+        aria-label={`Delete ${todo.name}`}
+        title={`Delete ${todo.name}`}
         tabIndex={-1}
       >
         ×

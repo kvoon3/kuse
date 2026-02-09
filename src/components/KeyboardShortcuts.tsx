@@ -64,7 +64,7 @@ export function KeyboardShortcuts({ isOpen, onClose }: KeyboardShortcutsProps) {
           </h2>
           <button
             onClick={onClose}
-            className='text-muted hover:text-base p-1 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
+            className='text-muted  p-1 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
             aria-label='Close keyboard shortcuts'
           >
             <span aria-hidden='true'>×</span>
