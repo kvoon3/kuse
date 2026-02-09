@@ -62,9 +62,9 @@ export const HabitItem = forwardRef<HTMLLIElement, HabitItemProps>(function Habi
       onFocus={onFocus}
       onKeyDown={handleKeyDown}
       className={cn(
-        'flex items-center justify-between p-3 border border-slate-200 rounded',
-        'focus:outline-none focus:ring-2 focus:ring-slate-400 focus:bg-slate-50',
-        isFocused && 'bg-slate-50 ring-2 ring-slate-400'
+        'flex items-center justify-between p-3 border border-base rounded-lg bg-card',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus:bg-muted',
+        isFocused && 'bg-muted ring-2 ring-ring'
       )}
       role='listitem'
       aria-selected={isFocused}
@@ -79,13 +79,13 @@ export const HabitItem = forwardRef<HTMLLIElement, HabitItemProps>(function Habi
           tabIndex={-1}
           aria-label={`Mark ${habit.name} as ${isChecked ? 'not completed' : 'completed'}`}
         />
-        <label htmlFor={`habit-${habit.id}`} className={cn(isChecked ? 'line-through text-slate-500' : '', 'cursor-pointer select-none')}>
+        <label htmlFor={`habit-${habit.id}`} className={cn(isChecked ? 'line-through text-muted' : '', 'cursor-pointer select-none')}>
           {habit.name}
         </label>
       </div>
       <button
         onClick={onDelete}
-        className='text-slate-400 hover:text-slate-600 text-sm p-1 rounded focus:outline-none focus:ring-2 focus:ring-slate-400'
+        className='text-muted hover:text-base text-sm p-1 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
         aria-label={`Delete ${habit.name}`}
         title={`Delete ${habit.name}`}
         tabIndex={-1}

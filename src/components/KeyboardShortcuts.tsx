@@ -1,3 +1,4 @@
+import { Keyboard } from 'lucide-react'
 import { useEffect, useRef } from 'react'
 
 import { cn } from '~/lib/utils'
@@ -53,19 +54,15 @@ export function KeyboardShortcuts({ isOpen, onClose }: KeyboardShortcutsProps) {
         aria-labelledby='keyboard-shortcuts-title'
         className={cn(
           'fixed bottom-20 right-4 z-50 w-80',
-          'bg-white border border-slate-200 rounded-lg shadow-lg',
-          'p-4 focus:outline-none focus:ring-2 focus:ring-slate-400'
+          'bg-card border border-base rounded-lg shadow-lg',
+          'p-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
         )}
       >
         <div className='flex items-center justify-between mb-4'>
-          <h2 id='keyboard-shortcuts-title' className='text-lg font-semibold text-slate-900'>
+          <h2 id='keyboard-shortcuts-title' className='text-lg font-semibold text-base'>
             Keyboard Shortcuts
           </h2>
-          <button
-            onClick={onClose}
-            className='text-slate-400 hover:text-slate-600 p-1 rounded focus:outline-none focus:ring-2 focus:ring-slate-400'
-            aria-label='Close keyboard shortcuts'
-          >
+          <button onClick={onClose} className='text-muted hover:text-base p-1 rounded focus-visible-ring' aria-label='Close keyboard shortcuts'>
             <span aria-hidden='true'>×</span>
           </button>
         </div>
@@ -73,14 +70,14 @@ export function KeyboardShortcuts({ isOpen, onClose }: KeyboardShortcutsProps) {
         <dl className='space-y-2'>
           {SHORTCUTS.map(({ key, description }) => (
             <div key={key} className='flex items-center justify-between'>
-              <dt className='text-slate-600 text-sm'>{description}</dt>
+              <dt className='text-muted text-sm'>{description}</dt>
               <dd>
                 <kbd
                   className={cn(
                     'inline-flex items-center justify-center',
                     'px-2 py-1 text-xs font-medium',
-                    'bg-slate-100 text-slate-700 rounded',
-                    'border border-slate-200',
+                    'bg-muted text-muted-foreground rounded',
+                    'border border-base',
                     'min-w-[2rem]'
                   )}
                 >
@@ -91,8 +88,8 @@ export function KeyboardShortcuts({ isOpen, onClose }: KeyboardShortcutsProps) {
           ))}
         </dl>
 
-        <p className='mt-4 text-xs text-slate-500'>
-          Press <kbd className='px-1 py-0.5 bg-slate-100 rounded border border-slate-200'>?</kbd> anytime to toggle this panel
+        <p className='mt-4 text-xs text-muted'>
+          Press <kbd className='px-1 py-0.5 bg-muted rounded border border-base'>?</kbd> anytime to toggle this panel
         </p>
       </div>
     </>
@@ -106,35 +103,16 @@ export function KeyboardShortcutsButton({ onClick }: { onClick: () => void }) {
       className={cn(
         'fixed bottom-4 right-4 z-30',
         'w-12 h-12 rounded-full',
-        'bg-slate-900 text-white',
+        'bg-primary-solid text-inverted',
         'flex items-center justify-center',
-        'shadow-lg hover:bg-slate-800',
-        'focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2',
+        'shadow-lg bg-primary-solid-hover',
+        'focus-visible-ring',
         'transition-colors duration-200'
       )}
       aria-label='Show keyboard shortcuts (press ?)'
       title='Keyboard shortcuts (?)'
     >
-      <svg
-        xmlns='http://www.w3.org/2000/svg'
-        width='24'
-        height='24'
-        viewBox='0 0 24 24'
-        fill='none'
-        stroke='currentColor'
-        strokeWidth='2'
-        strokeLinecap='round'
-        strokeLinejoin='round'
-        aria-hidden='true'
-      >
-        <path d='M10 9a3 3 0 0 1 3-3 3 3 0 0 1 3 3 3 3 0 0 1-3 3h-1' />
-        <path d='M14 17h-1a2 2 0 0 1-2-2 2 2 0 0 1 2-2h1' />
-        <rect x='2' y='4' width='20' height='16' rx='2' />
-        <line x1='6' y1='8' x2='6' y2='8.01' />
-        <line x1='18' y1='8' x2='18' y2='8.01' />
-        <line x1='6' y1='16' x2='6' y2='16.01' />
-        <line x1='18' y1='16' x2='18' y2='16.01' />
-      </svg>
+      <Keyboard className='h-6 w-6' aria-hidden='true' />
     </button>
   )
 }

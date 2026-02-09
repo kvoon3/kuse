@@ -24,14 +24,7 @@ const CELL_SIZE = RECT_SIZE + RECT_GAP
 const WEEK_COUNT = 53
 const DAY_COUNT = 7
 
-// GitHub-style colors
-const COLORS = {
-  0: '#ebedf0',
-  1: '#9be9a8',
-  2: '#40c463',
-  3: '#30a14e',
-  4: '#216e39',
-}
+const HEATMAP_COLORS = ['var(--heatmap-0)', 'var(--heatmap-1)', 'var(--heatmap-2)', 'var(--heatmap-3)', 'var(--heatmap-4)'] as const
 
 export function Heatmap({ checkIns, habitId, className }: HeatmapProps) {
   const [focusedIndex, setFocusedIndex] = useState<number | null>(null)
@@ -184,7 +177,7 @@ export function Heatmap({ checkIns, habitId, className }: HeatmapProps) {
                         height={RECT_SIZE}
                         rx={2}
                         ry={2}
-                        fill={COLORS[day.level]}
+                        fill={HEATMAP_COLORS[day.level]}
                         tabIndex={0}
                         role='gridcell'
                         aria-label={getAriaLabel(day)}

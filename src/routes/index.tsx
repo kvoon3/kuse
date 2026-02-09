@@ -124,16 +124,14 @@ function Home() {
   }
 
   return (
-    <div className='min-h-screen bg-white p-4'>
+    <div className='p-4 pt-6'>
       <a href='#main-content' className='skip-link'>
         Skip to main content
       </a>
 
       <div className='max-w-3xl mx-auto'>
-        <h1 className='text-2xl font-bold mb-8'>Kuse</h1>
-
         {habits && habits.length > 0 && (
-          <div className='mb-8 p-4 mx-auto border border-slate-200 rounded w-fit' role='region' aria-label='Activity overview'>
+          <div className='mb-8 p-4 mx-auto border border-base rounded-lg w-fit bg-card' role='region' aria-label='Activity overview'>
             <Heatmap checkIns={checkIns || []} />
           </div>
         )}
@@ -157,11 +155,11 @@ function Home() {
               placeholder='New habit...'
               aria-label='New habit name'
               aria-describedby='habit-help shortcut-help'
-              className='flex-1 px-3 py-2 border border-slate-300 rounded focus:outline-none focus:ring-1 focus:ring-slate-400'
+              className='flex-1 px-3 py-2 border border-base rounded-lg bg-base focus:outline-none focus:ring-2 focus-visible:ring-ring'
             />
             <button
               type='submit'
-              className='px-4 py-2 bg-slate-900 text-white rounded hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2'
+              className='px-4 py-2 bg-primary-solid text-inverted rounded-lg hover:bg-primary-solid-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
               aria-label='Add habit'
             >
               Add
@@ -198,7 +196,7 @@ function Home() {
           </section>
 
           {habits && habits.length === 0 && (
-            <p className='text-center text-slate-500 py-12' role='status'>
+            <p className='text-center text-muted py-12' role='status'>
               No habits yet. Add one above!
             </p>
           )}

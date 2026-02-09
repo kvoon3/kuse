@@ -1,8 +1,10 @@
 import { TanStackDevtools } from '@tanstack/react-devtools'
-import { HeadContent, Scripts, createRootRoute } from '@tanstack/react-router'
+import { HeadContent, Scripts, createRootRoute, Outlet } from '@tanstack/react-router'
 import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
 
 import appCss from '../styles.css?url'
+import { Header } from '~/components/Header'
+import { ThemeProvider } from '~/components/ThemeProvider'
 
 export const Route = createRootRoute({
   head: () => ({
@@ -26,17 +28,30 @@ export const Route = createRootRoute({
     ],
   }),
 
-  shellComponent: RootDocument,
+  component: RootComponent,
 })
 
-function RootDocument({ children }: { children: React.ReactNode }) {
+function RootComponent() {
+  return (
+    <ThemeProvider>
+      <RootDocument />
+    </ThemeProvider>
+  )
+}
+
+function RootDocument() {
   return (
     <html lang='en'>
       <head>
         <HeadContent />
       </head>
-      <body>
-        {children}
+      <body className='min-h-screen bg-base text-base antialiased'>
+        <div className='relative flex min-h-screen flex-col'>
+          <Header />
+          <main className='flex-1'>
+            <Outlet />
+          </main>
+        </div>
         <TanStackDevtools
           config={{
             position: 'bottom-right',
