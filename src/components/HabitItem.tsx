@@ -1,4 +1,4 @@
-import * as React from 'react'
+import { forwardRef, useEffect, useImperativeHandle, useRef, type KeyboardEvent } from 'react'
 
 import { cn } from '~/lib/utils'
 
@@ -14,21 +14,21 @@ type HabitItemProps = {
   onNavigate: (direction: 'up' | 'down') => void
 }
 
-export const HabitItem = React.forwardRef<HTMLLIElement, HabitItemProps>(function HabitItem(
+export const HabitItem = forwardRef<HTMLLIElement, HabitItemProps>(function HabitItem(
   { habit, isChecked, isFocused, onToggle, onDelete, onFocus, onNavigate },
   ref
 ) {
-  const itemRef = React.useRef<HTMLLIElement>(null)
+  const itemRef = useRef<HTMLLIElement>(null)
 
-  React.useImperativeHandle(ref, () => itemRef.current!)
+  useImperativeHandle(ref, () => itemRef.current!)
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (isFocused) {
       itemRef.current?.focus()
     }
   }, [isFocused])
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
+  const handleKeyDown = (e: KeyboardEvent) => {
     switch (e.key) {
       case ' ':
       case 'Spacebar':

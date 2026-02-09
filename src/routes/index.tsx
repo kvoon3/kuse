@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
-import * as React from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useLocalStorage } from 'react-use'
 
 import { HabitItem } from '~/components/HabitItem'
@@ -14,14 +14,14 @@ export const Route = createFileRoute('/')({ component: Home })
 function Home() {
   const [habits, setHabits] = useLocalStorage<Habit[]>('habits', [])
   const [checkIns, setCheckIns] = useLocalStorage<CheckIn[]>('checkIns', [])
-  const [liveRegionText, setLiveRegionText] = React.useState('')
-  const [focusedHabitId, setFocusedHabitId] = React.useState<string | null>(null)
-  const [newlyAddedId, setNewlyAddedId] = React.useState<string | null>(null)
-  const [showKeyboardShortcuts, setShowKeyboardShortcuts] = React.useState(false)
-  const inputRef = React.useRef<HTMLInputElement>(null)
-  const habitRefs = React.useRef<Map<string, HTMLLIElement>>(new Map())
+  const [liveRegionText, setLiveRegionText] = useState('')
+  const [focusedHabitId, setFocusedHabitId] = useState<string | null>(null)
+  const [newlyAddedId, setNewlyAddedId] = useState<string | null>(null)
+  const [showKeyboardShortcuts, setShowKeyboardShortcuts] = useState(false)
+  const inputRef = useRef<HTMLInputElement>(null)
+  const habitRefs = useRef<Map<string, HTMLLIElement>>(new Map())
 
-  React.useEffect(() => {
+  useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
         e.preventDefault()
@@ -47,13 +47,13 @@ function Home() {
   }, [])
 
   // Clear newlyAddedId after focus effect runs
-  React.useEffect(() => {
+  useEffect(() => {
     if (newlyAddedId && focusedHabitId === newlyAddedId) {
       setNewlyAddedId(null)
     }
   }, [newlyAddedId, focusedHabitId])
 
-  const announce = React.useCallback((message: string) => {
+  const announce = useCallback((message: string) => {
     setLiveRegionText(message)
     setTimeout(() => setLiveRegionText(''), 1000)
   }, [])

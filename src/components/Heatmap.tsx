@@ -1,4 +1,4 @@
-import * as React from 'react'
+import { useCallback, useMemo, useRef, useState, type KeyboardEvent } from 'react'
 
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '~/components/ui/tooltip'
 import { cn, toLocalDateStr } from '~/lib/utils'
@@ -34,10 +34,10 @@ const COLORS = {
 }
 
 export function Heatmap({ checkIns, habitId, className }: HeatmapProps) {
-  const [focusedIndex, setFocusedIndex] = React.useState<number | null>(null)
-  const gridRef = React.useRef<SVGSVGElement>(null)
+  const [focusedIndex, setFocusedIndex] = useState<number | null>(null)
+  const gridRef = useRef<SVGSVGElement>(null)
 
-  const calendarData = React.useMemo(() => {
+  const calendarData = useMemo(() => {
     const today = new Date()
     const currentDayOfWeek = today.getDay()
 
@@ -85,7 +85,7 @@ export function Heatmap({ checkIns, habitId, className }: HeatmapProps) {
     return data
   }, [checkIns, habitId])
 
-  const weeks = React.useMemo(() => {
+  const weeks = useMemo(() => {
     const weeksArray: DayData[][] = []
     for (let i = 0; i < calendarData.length; i += 7) {
       weeksArray.push(calendarData.slice(i, i + 7))
@@ -94,8 +94,8 @@ export function Heatmap({ checkIns, habitId, className }: HeatmapProps) {
   }, [calendarData])
 
   // Handle keyboard navigation
-  const handleKeyDown = React.useCallback(
-    (event: React.KeyboardEvent, weekIndex: number, dayIndex: number) => {
+  const handleKeyDown = useCallback(
+    (event: KeyboardEvent, weekIndex: number, dayIndex: number) => {
       const currentIndex = weekIndex * 7 + dayIndex
       let newIndex: number | null = null
 
@@ -141,16 +141,16 @@ export function Heatmap({ checkIns, habitId, className }: HeatmapProps) {
   )
 
   // Handle focus management
-  const handleFocus = React.useCallback((index: number) => {
+  const handleFocus = useCallback((index: number) => {
     setFocusedIndex(index)
   }, [])
 
-  const handleBlur = React.useCallback(() => {
+  const handleBlur = useCallback(() => {
     setFocusedIndex(null)
   }, [])
 
   // Generate aria-label for each cell
-  const getAriaLabel = React.useCallback((day: DayData): string => {
+  const getAriaLabel = useCallback((day: DayData): string => {
     const dateStr = day.date.toLocaleDateString(undefined, {
       weekday: 'long',
       year: 'numeric',

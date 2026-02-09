@@ -1,4 +1,4 @@
-import * as React from 'react'
+import { useEffect, useRef } from 'react'
 
 import { cn } from '~/lib/utils'
 
@@ -23,9 +23,9 @@ const SHORTCUTS: ShortcutItem[] = [
 ]
 
 export function KeyboardShortcuts({ isOpen, onClose }: KeyboardShortcutsProps) {
-  const panelRef = React.useRef<HTMLDivElement>(null)
+  const panelRef = useRef<HTMLDivElement>(null)
 
-  React.useEffect(() => {
+  useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && isOpen) {
         onClose()
